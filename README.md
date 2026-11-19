@@ -25,7 +25,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/chat-dark.png">
-    <img src="assets/screenshots/chat-light.png" alt="A chat with a bot. The bot's steps are listed while it works, its screen is live in the side panel, and the Engine panel shows its model." width="100%">
+    <img src="assets/screenshots/chat-light.png" alt="A chat with a bot. The bot's steps are listed while it works, and the side panel shows its screen, routines, model and voice settings." width="100%">
   </picture>
 </p>
 
@@ -48,18 +48,8 @@ The interface is modeled on Grok Bot. Underneath, every bot is a Hermes agent, s
 | **Research on X** | Every bot has an `x_search` tool, backed by xAI. |
 | **Routines, tasks and a Library** | Recurring jobs on a schedule, a task list per bot, and a place where bots save the files they make. |
 
-<table>
-  <tr>
-    <td width="50%"><img src="assets/screenshots/viewer.png" alt="The full-size viewer showing a bot's Chrome window, live."></td>
-    <td width="50%"><img src="assets/screenshots/home-screen.jpg" alt="A bot's home screen: clock, the bot's name and role, and its apps."></td>
-  </tr>
-  <tr>
-    <td align="center"><sub>Watching a bot's screen live</sub></td>
-    <td align="center"><sub>Each screen is dressed as that bot's own computer</sub></td>
-  </tr>
-</table>
 
-<sub>The chat screenshot at the top uses the sample data built into the dev server (add <code>?fixtures</code> to the URL). The two above are from a running install.</sub>
+<sub>The screenshot at the top shows the sample data built into the dev server (add <code>?fixtures</code> to the URL).</sub>
 
 ## How it fits together
 
@@ -191,6 +181,6 @@ docs/               architecture; the Orgo and xAI/Composio guides predate the H
 
 ## License and credits
 
-Project code is available under the [MIT license](LICENSE). The bot artwork and some icons come from Grok Bot's design and remain the property of their owners, as do third-party app logos; the MIT license does not cover them. See [third-party notices](THIRD_PARTY_NOTICES.md).
+Available under the [MIT license](LICENSE). The bot characters, icons and screenshots in this repository were made for the project (icons from [Lucide](https://lucide.dev)); app logos are loaded at runtime and belong to their owners. See [third-party notices](THIRD_PARTY_NOTICES.md).
 
 Continued from [grokbot-clone](https://github.com/nickvasilescu/grokbot-clone). Built with [Hermes Agent](https://github.com/NousResearch/hermes-agent), [Orgo](https://orgo.ai), [Composio](https://composio.dev), and [xAI](https://x.ai). This is an independent project, unaffiliated with xAI, Cursor/Anysphere or Nous Research.

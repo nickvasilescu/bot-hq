@@ -6,7 +6,6 @@ import { botVars } from '../lib/colors';
 import { computerStatusText } from '../lib/computer';
 import { displayName, useSelectedBot, useStore } from '../store';
 import { Icon } from './Icon';
-import { ToolkitLogo } from './ToolkitLogo';
 import { VoiceSettings } from './VoiceSettings';
 import { ComputerScreen, type ScreenMode } from './ComputerViewer';
 import { EngineSettings } from './EngineSettings';
@@ -128,7 +127,7 @@ export function DetailsPanel() {
                 </div>
                 <div className="panel-card">
                   <button type="button" className="panel-row panel-row--link" onClick={addSlack}>
-                    <span className="panel-row__glyph"><ToolkitLogo name="Slack" logo="/assets/icons/slack.svg" size={16} radius={4} /></span>
+                    <span className="panel-row__glyph"><Icon name="slack" size={16} /></span>
                     <span className="panel-row__title" style={{ flex: 1 }}>Add to Slack</span>
                     <Icon name="chev_right" size={12} opacity={0.56} />
                   </button>

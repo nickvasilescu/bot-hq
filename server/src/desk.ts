@@ -2,6 +2,8 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import { box, displayFor } from './box.js';
+import { SHAPES } from './avatar-shapes.js';
+import type { AvatarShape } from './types.js';
 
 /**
  * The desk: what makes one screen of the shared computer look like one bot's own tidy computer.
@@ -267,37 +269,19 @@ function wallpaperSvg(p: Palette, seed: string): string {
 
 // ---------------------------------------------------------------- avatar
 
-interface ShapeDef { viewBox: string; d: string; outline: string }
-/** Older shape names the web app also maps onto the drawn set. */
-const SHAPE_FALLBACK: Record<string, string> = {
-  bean: 'teardrop', squircle: 'square', capsule: 'tablet', cylinder: 'tablet', gem: 'hex', crystal: 'hex',
-  shield: 'house', dome: 'house', arch: 'house', leaf: 'teardrop',
-};
-let shapesCache: Record<string, ShapeDef> | null = null;
-
-/** The avatar art lives in the web app; read it as text so the server needs no build step for it. */
-function shapes(): Record<string, ShapeDef> {
-  if (shapesCache) return shapesCache;
-  shapesCache = {};
-  try {
-    const text = fs.readFileSync(new URL('../../web/src/avatar/shapes.gen.ts', import.meta.url), 'utf8');
-    const start = text.indexOf('{', text.indexOf('SHAPES'));
-    const end = text.lastIndexOf('}');
-    if (start > 0 && end > start) shapesCache = JSON.parse(text.slice(start, end + 1)) as Record<string, ShapeDef>;
-  } catch {
-    warn('avatar shapes not found, using a plain circle');
-  }
-  return shapesCache;
-}
-
+/** The bot's character (the same drawing as the web app's BotAvatar), on a white sticker edge. */
 function avatarSvg(shape: string, fill: string): string {
-  const all = shapes();
-  const def = all[shape] ?? all[SHAPE_FALLBACK[shape] ?? 'blob'] ?? all.blob;
+  const def = SHAPES[shape as AvatarShape] ?? SHAPES.blob;
   const safe = (s: string) => /^[\w\s.,\-+]*$/.test(s);
-  if (!def || !safe(def.d) || !safe(def.outline) || !safe(def.viewBox)) {
+  if (!def || !safe(def.d)) {
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="#fff"/><circle cx="24" cy="24" r="19" fill="${fill}"/></svg>`;
   }
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${def.viewBox}"><path d="${def.outline}" fill="#fff"/><path d="${def.d}" fill="${fill}" fill-rule="evenodd"/></svg>`;
+  const { y, dx, s } = def.eyes;
+  const eyes = [-1, 1].map((side) => {
+    const cx = 50 + side * dx;
+    return `<ellipse cx="${cx}" cy="${y}" rx="${7 * s}" ry="${9 * s}" fill="#fff"/><circle cx="${cx + 1.1 * s}" cy="${y + 2 * s}" r="${4 * s}" fill="#1C1C1C"/>`;
+  }).join('');
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="4 4 92 92"><path d="${def.d}" fill="#fff" stroke="#fff" stroke-width="6" stroke-linejoin="round"/><path d="${def.d}" fill="${fill}"/>${eyes}</svg>`;
 }
 
 // ---------------------------------------------------------------- the look of one screen
