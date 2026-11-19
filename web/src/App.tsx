@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { startEvents } from './lib/events';
+import { isConnectedMessage } from './lib/api';
 import { useStore } from './store';
 import { ChatView } from './components/ChatView';
 import { ComputerViewer } from './components/ComputerViewer';
@@ -29,7 +30,7 @@ function Shell() {
     const stop = startEvents();
     // OAuth popups post back here; refresh connection-dependent views and the open transcript.
     const onMsg = (e: MessageEvent) => {
-      if ((e.data as { type?: string })?.type !== 'grokbot-connected') return;
+      if (!isConnectedMessage(e)) return;
       const s = useStore.getState();
       s.set({ connectionsVersion: s.connectionsVersion + 1 });
       if (s.selectedBotId) s.loadRows(s.selectedBotId).catch(() => {});

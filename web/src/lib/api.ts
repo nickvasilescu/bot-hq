@@ -56,10 +56,19 @@ export const api = {
   createRoom: (name: string, botIds: string[]) => req<{ id: string }>('POST', '/rooms', { name, botIds }),
 };
 
+let connectPopup: Window | null = null;
+
 /** Open a Composio redirect in a centered popup. */
 export function openPopup(url: string) {
   const w = 520, h = 680;
   const left = window.screenX + (window.outerWidth - w) / 2;
   const top = window.screenY + (window.outerHeight - h) / 2;
-  return window.open(url, 'grokbot-connect', `width=${w},height=${h},left=${left},top=${top}`);
+  connectPopup = window.open(url, 'grokbot-connect', `width=${w},height=${h},left=${left},top=${top}`);
+  return connectPopup;
+}
+
+/** The "app connected" note from our OAuth callback page: it must come from the popup we opened or from this app's own origin. */
+export function isConnectedMessage(e: MessageEvent): boolean {
+  if ((e.data as { type?: string } | null)?.type !== 'grokbot-connected') return false;
+  return e.origin === window.location.origin || (connectPopup !== null && e.source === connectPopup);
 }
