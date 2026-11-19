@@ -1,4 +1,4 @@
-/* ---------- transcript cards (screen 02 draft card language) ---------- */
+/* ---------- transcript cards ---------- */
 .card {
   width: 414px; max-width: 100%; background: var(--color-bg-pane); border-radius: var(--radius-card);
   box-shadow: var(--shadow-card); display: flex; flex-direction: column; overflow: clip;
@@ -14,7 +14,7 @@
 .card__error { padding: 0 16px 12px; font-size: 13px; line-height: 18px; color: var(--color-danger-text); }
 .card.is-resolved .card__head { padding-bottom: 0; }
 
-/* question card (screen 01) */
+/* question card */
 .question-card { width: 560px; box-shadow: var(--color-border-tertiary) 0 0 0 1px inset; }
 .question-card__head { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px 4px; }
 .question-card__q { font-size: 15px; font-weight: 600; line-height: 22px; letter-spacing: 0.15px; color: var(--color-text-primary); }
@@ -35,7 +35,7 @@
 .question-card.is-resolved .question-option.is-chosen .question-option__key { background: var(--bot-action, var(--color-primary)); color: var(--bot-on-action, #FFFFFF); border-color: transparent; }
 .question-card__foot { display: flex; justify-content: flex-end; padding: 0 12px 10px; margin-top: -4px; }
 
-/* draft card (screen 02) */
+/* draft card */
 .draft-card__head { display: flex; align-items: flex-start; gap: 10px; padding: 16px 16px 4px; }
 .draft-card__tile { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 8px; background: var(--color-primary); flex-shrink: 0; }
 .draft-card__titles { display: flex; flex-direction: column; flex: 1 1 0; padding: 2px 0; }

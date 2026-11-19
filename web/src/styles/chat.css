@@ -1,4 +1,4 @@
-/* ---------- chat column (screens 01/02) ---------- */
+/* ---------- chat column ---------- */
 .chat {
   position: relative; display: flex; flex-direction: column; flex: 1 1 0; min-width: 424px; height: 100%;
   background: var(--color-bg-chrome); overflow: hidden;
@@ -56,7 +56,7 @@
 .bubble.is-agent { background: linear-gradient(180deg, #FFFFFF29 0%, #FFFFFF00 100%), var(--color-bubble-agent); color: var(--color-ink); }
 .bubble.is-user { background: linear-gradient(180deg, #FFFFFF0F 0%, #FFFFFF00 100%), var(--bot-bubble, var(--color-bubble-user)); color: #FFFFFF; }
 .bubble__plain { white-space: pre-wrap; }
-/* Grouped bubble "tail" corners (README: bottom-left on first, top-left on last). Mirrored for user bubbles. */
+/* Grouped bubble "tail" corners: bottom-left on the first bubble, top-left on the last. Mirrored for user bubbles. */
 .bubble.is-agent.is-first { border-bottom-left-radius: 6px; }
 .bubble.is-agent.is-mid { border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
 .bubble.is-agent.is-last { border-top-left-radius: 6px; }

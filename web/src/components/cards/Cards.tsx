@@ -147,7 +147,7 @@ export function ConnectCard({ row, body }: { row: Row; body: Card<'connect'> }) 
   );
 }
 
-// ---------------- draft (screen 02) ----------------
+// ---------------- draft ----------------
 
 const CHANNEL_LABEL: Record<string, string> = { email: 'Email', slack: 'Slack', message: 'Chat' };
 

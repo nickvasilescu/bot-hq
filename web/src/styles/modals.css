@@ -1,4 +1,4 @@
-/* ---------- modals: 50% scrim (screens 03-05) ---------- */
+/* ---------- modals: 50% scrim ---------- */
 .modal-root { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 24px; }
 .modal-scrim { position: absolute; inset: 0; background: var(--color-bg-scrim); animation: fade 160ms ease-out; }
 .modal {
