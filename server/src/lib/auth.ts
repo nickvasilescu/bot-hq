@@ -33,7 +33,16 @@ export function userFromToken(t: string | undefined): User | null {
 
 export function userFromCookieHeader(cookieHeader: string | undefined): User | null {
   const m = cookieHeader?.split(/;\s*/).find((p) => p.startsWith(`${COOKIE}=`));
-  return userFromToken(m ? decodeURIComponent(m.slice(COOKIE.length + 1)) : undefined);
+  return userFromToken(m ? decodeCookie(m.slice(COOKIE.length + 1)) : undefined);
+}
+
+/** A malformed value (e.g. a stray '%') is no session, not an error: this runs in the WebSocket upgrade handler, where a throw stops the server. */
+function decodeCookie(v: string): string | undefined {
+  try {
+    return decodeURIComponent(v);
+  } catch {
+    return undefined;
+  }
 }
 
 export const requireUser: MiddlewareHandler<AuthVars> = async (c, next) => {
