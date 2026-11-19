@@ -5,7 +5,7 @@
 #     bash install-on-computer.sh /path/to/hq-app.tgz
 #
 # Optional: PORT (8787), PRIMARY_CDP_URL (DevTools URL of the main agent's own Chrome, if it has one),
-# DEV_LOGIN=1 (test machines only), KEYS_FILE (lines XAI_API_KEY=, COMPOSIO_API_KEY=, ORGO_API_KEY=).
+# KEYS_FILE (lines XAI_API_KEY=, COMPOSIO_API_KEY=, ORGO_API_KEY=).
 # ORGO_API_KEY may be left out of KEYS_FILE when Hermes' own .env already has one.
 #
 # It never restarts Hermes and never touches its config: adding the app's tools to the main agent is a
@@ -32,6 +32,8 @@ tar -xzf "$tgz" -C "$APP"
 # 3. Settings, written once. Later runs keep the file (and so the session secret and every bot's token).
 if [ ! -f "$APP/.env" ]; then
   : "${PUBLIC_URL:?PUBLIC_URL is required on first install}" "${ORGO_COMPUTER_ID:?ORGO_COMPUTER_ID is required on first install}"
+  # Every account gets agents with a root shell on this computer, so a public URL needs a list of who may sign in.
+  : "${ALLOWED_EMAILS:?ALLOWED_EMAILS (comma-separated emails that may sign in) is required on first install}"
   # A key that is not in the file is simply empty (grep finding nothing must not stop the script).
   key() { { grep -E "^$1=" "$2" 2>/dev/null || true; } | tail -1 | cut -d= -f2- | sed -e 's/^["'\'']//' -e 's/["'\'']$//'; }
   K="${KEYS_FILE:-/dev/null}"
@@ -42,7 +44,7 @@ if [ ! -f "$APP/.env" ]; then
     echo "APP_URL=$PUBLIC_URL"
     echo "SERVER_URL=$PUBLIC_URL"
     echo "SESSION_SECRET=$(openssl rand -hex 32)"
-    echo "DEV_LOGIN=${DEV_LOGIN:-0}"
+    echo "DEV_LOGIN=0"
     echo "ALLOWED_EMAILS=${ALLOWED_EMAILS:-}"
     echo "DB_PATH=$DATA/hq.db"
     echo "ENGINES_DIR=$DATA/engines"

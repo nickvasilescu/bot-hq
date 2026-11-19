@@ -5,7 +5,8 @@ import { db, now } from './db.js';
 import { env } from './env.js';
 import { newId } from './lib/ids.js';
 import { hub } from './lib/hub.js';
-import { createSession, destroySession, isOwnerKey, requireUser, userFromCookieHeader, type AuthVars } from './lib/auth.js';
+import { getConnInfo } from '@hono/node-server/conninfo';
+import { createSession, destroySession, isLoopbackAddress, isOwnerKey, requireUser, userFromCookieHeader, type AuthVars } from './lib/auth.js';
 import { allLive, appendRow, clearConversation, emitBot, getBot, getBotRow, getRow, listBots, listRoutines, listRows, listTasks, toRoutine, updateRow } from './store.js';
 import { enqueue, interrupt, resolveApproval } from './agent/loop.js';
 import { computerState, ensureComputer, forgetBotFiles, readyScreen, refreshComputer, releaseScreen, suspendComputer } from './computer.js';
@@ -55,10 +56,21 @@ function createBot(userId: string, b: { name: string; label?: string; descriptio
   return getBot(id)!;
 }
 
-function findOrCreateUser(email: string, name?: string, preferId?: string) {
+/**
+ * Who may sign in. Every account gets agents with a shell on the shared computer, so on a public URL
+ * only ALLOWED_EMAILS get in, and with an empty list nobody new does. `owner` (the key that only
+ * exists on the server's machine) is always let in.
+ */
+function maySignIn(email: string, exists: boolean, owner: boolean): boolean {
+  if (owner) return true;
+  if (env.allowedEmails.length) return env.allowedEmails.includes(email.toLowerCase());
+  return exists || env.localOnly;
+}
+
+function findOrCreateUser(email: string, name?: string, preferId?: string, opts: { owner?: boolean } = {}) {
   const existing = db.prepare('SELECT * FROM users WHERE lower(email)=lower(?)').get(email) as any;
+  if (!maySignIn(email, !!existing, !!opts.owner)) throw new UserError('This account is not allowed to sign in here.');
   if (existing) return { id: existing.id as string, isNew: false };
-  if (env.allowedEmails.length && !env.allowedEmails.includes(email.toLowerCase())) throw new UserError('This account is not allowed to sign in here.');
   const id = preferId ?? newId('usr');
   db.prepare('INSERT INTO users(id,email,name,created_at) VALUES (?,?,?,?)').run(id, email, name ?? email.split('@')[0], now());
   createBot(id, { name: env.primaryBotName, label: env.primaryBotLabel, description: 'Your main point of contact. Checks in proactively and coordinates work with your other Bots.', avatarShape: 'blob', avatarColor: 'black', isPrimary: true });
@@ -83,9 +95,15 @@ api.get('/auth/google/start', async (c) => {
 
 api.get('/auth/google/callback', async (c) => {
   const attempt = db.prepare('SELECT * FROM login_attempts WHERE id=?').get(c.req.query('attempt') ?? '') as any;
-  const caId = c.req.query('connected_account_id') ?? attempt?.connected_account_id;
-  if (!attempt || c.req.query('status') === 'failed' || !caId) return c.redirect(`${env.appUrl}/?login=failed`);
-  if (attempt.connected_account_id && caId !== attempt.connected_account_id) return c.redirect(`${env.appUrl}/?login=failed`);
+  // Only the Google connection this attempt started may sign in, and only for a short while: an
+  // account id taken from the URL alone could name somebody else's connection.
+  const caId: string | undefined = attempt?.connected_account_id ?? undefined;
+  const fresh = attempt && now() - attempt.created_at < 15 * 60_000;
+  const given = c.req.query('connected_account_id');
+  if (!attempt || !fresh || c.req.query('status') === 'failed' || !caId || (given && given !== caId)) {
+    if (attempt) db.prepare('DELETE FROM login_attempts WHERE id=?').run(attempt.id);
+    return c.redirect(`${env.appUrl}/?login=failed`);
+  }
   db.prepare('DELETE FROM login_attempts WHERE id=?').run(attempt.id);
   try {
     const profile = await googleProfile(caId);
@@ -95,13 +113,17 @@ api.get('/auth/google/callback', async (c) => {
     createSession(c, id);
     return c.redirect(`${env.appUrl}/`);
   } catch (e: any) {
-    console.error('[auth] google callback', e);
+    // A refused account leaves no Gmail connection behind.
+    if (e instanceof UserError) await deleteConnection(caId);
+    else console.error('[auth] google callback', e);
     return c.redirect(`${env.appUrl}/?login=failed`);
   }
 });
 
 api.post('/auth/dev', async (c) => {
-  if (!env.devLogin) return c.json({ error: 'disabled' }, 403);
+  // Email-only sign-in proves nothing about who is asking, so it only works for a local app and
+  // only for requests from this machine (not, say, from the LAN when the server listens there).
+  if (!env.devLogin || !isLoopbackAddress(getConnInfo(c).remote.address)) return c.json({ error: 'disabled' }, 403);
   const { email, name } = await c.req.json<{ email: string; name?: string }>();
   if (!email?.includes('@')) return c.json({ error: 'email required' }, 400);
   try {
@@ -123,7 +145,7 @@ api.post('/auth/owner', async (c) => {
   const { email, name, link } = await c.req.json<{ email: string; name?: string; link?: boolean }>();
   if (!email?.includes('@')) return c.json({ error: 'email required' }, 400);
   try {
-    const { id } = findOrCreateUser(email, name);
+    const { id } = findOrCreateUser(email, name, undefined, { owner: true });
     if (link) {
       const token = crypto.randomBytes(24).toString('base64url');
       signInLinks.set(token, { userId: id, expires: Date.now() + 15 * 60_000 });

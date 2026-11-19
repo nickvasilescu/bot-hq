@@ -1,7 +1,7 @@
 import type { IncomingMessage, Server } from 'node:http';
 import { WebSocket, WebSocketServer } from 'ws';
 import { db } from './db.js';
-import { userFromCookieHeader } from './lib/auth.js';
+import { isSameOriginRequest, userFromCookieHeader } from './lib/auth.js';
 import { vncAuthResponse } from './lib/des.js';
 import { orgo } from './orgo.js';
 import { readyScreen, screenFor } from './computer.js';
@@ -125,6 +125,14 @@ export function attachVncRelay(server: Server) {
     const url = new URL(req.url ?? '/', 'http://x');
     const m = url.pathname.match(/^\/api\/bots\/([^/]+)\/screen$/);
     if (!m) return; // not ours
+    // A page on another site must not be able to open (and in control mode, drive) a bot's screen
+    // with the user's cookie: browsers send Origin on every WebSocket handshake.
+    const header = (h: string | string[] | undefined) => (Array.isArray(h) ? h[0] : h);
+    if (!isSameOriginRequest(header(req.headers.origin), header(req.headers['sec-fetch-site']))) {
+      socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
+      socket.destroy();
+      return;
+    }
     const user = userFromCookieHeader(req.headers.cookie);
     const bot = user ? (db.prepare('SELECT * FROM bots WHERE id=? AND user_id=?').get(m[1], user.id) as any) : null;
     if (!user || !bot) {

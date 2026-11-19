@@ -43,6 +43,38 @@ export const requireUser: MiddlewareHandler<AuthVars> = async (c, next) => {
   await next();
 };
 
+const originOf = (u: string) => { try { return new URL(u).origin; } catch { return null; } };
+/** Origins the web app is served from: APP_URL, and SERVER_URL when the server serves the built app itself. */
+const appOrigins = new Set([originOf(env.appUrl), originOf(env.serverUrl)].filter((o): o is string => !!o));
+
+/**
+ * Whether a request may act with the user's cookie. Browsers say where a request comes from
+ * (Sec-Fetch-Site, Origin); anything from another site is refused, so a page elsewhere (including
+ * another app under the same parent domain) cannot post to the API or open the screen socket as
+ * the signed-in user. Requests without those headers come from scripts, not browsers, and carry no
+ * ambient cookie.
+ */
+export function isSameOriginRequest(origin: string | undefined, fetchSite: string | undefined): boolean {
+  if (fetchSite) return fetchSite === 'same-origin' || fetchSite === 'none';
+  if (origin) return appOrigins.has(origin);
+  return true;
+}
+
+/** Refuses cross-site requests that could change something (anything but GET/HEAD/OPTIONS). */
+export const sameOriginWrites: MiddlewareHandler = async (c, next) => {
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(c.req.method) && !isSameOriginRequest(c.req.header('origin'), c.req.header('sec-fetch-site'))) {
+    return c.json({ error: 'cross-site request refused' }, 403);
+  }
+  await next();
+};
+
+/** A socket peer on this machine (127.0.0.0/8, ::1, or an IPv4-mapped loopback). */
+export function isLoopbackAddress(addr: string | undefined): boolean {
+  if (!addr) return false;
+  const a = addr.replace(/^::ffff:/i, '');
+  return a === '::1' || /^127\.\d+\.\d+\.\d+$/.test(a);
+}
+
 /**
  * Key for signing in from the machine the server runs on (POST /api/auth/owner). It is derived from
  * SESSION_SECRET, so only someone who can read the server's .env can make it:

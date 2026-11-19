@@ -1,7 +1,7 @@
 // End-to-end smoke test (real server, real Hermes engines, real Orgo computer).
 // Usage: node tests/e2e.mjs [baseUrl]   (default http://localhost:8787)
-// Signs in with dev login (E2E_EMAIL, server needs DEV_LOGIN=1) or with an existing session
-// (E2E_SESSION=<grokbot_session cookie value>). Creates a throwaway "QA" bot, which gets its own
+// Signs in with dev login (E2E_EMAIL; only for a server on localhost with DEV_LOGIN=1) or with an
+// existing session (E2E_SESSION=<grokbot_session cookie value>, e.g. from scripts/sign-in-link.sh). Creates a throwaway "QA" bot, which gets its own
 // Hermes engine and screen, exercises the core flows, then deletes it.
 import { chromium } from 'playwright';
 import fs from 'node:fs';
