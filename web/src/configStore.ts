@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { ServerEvent } from '@shared/types';
 import { useStore } from './store';
+import { lsGet, lsSet } from './lib/storage';
 
 /** UI state for bot settings, app settings, the Tasks view and the theme. Kept apart from store.ts on purpose. */
 
@@ -24,9 +25,10 @@ interface ConfigUI {
   bump(key: string): void;
 }
 
-const LS_THEME = 'grokbot.theme';
+const LS_THEME = 'theme';
 const readTheme = (): Theme => {
-  try { const t = localStorage.getItem(LS_THEME); return t === 'light' || t === 'dark' ? t : 'system'; } catch { return 'system'; }
+  const t = lsGet(LS_THEME);
+  return t === 'light' || t === 'dark' ? t : 'system';
 };
 
 const darkQuery = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
@@ -49,7 +51,7 @@ export const useConfigUI = create<ConfigUI>((set, get) => ({
   closeAppSettings: () => set({ appSettings: null }),
   setView: (view) => set({ view }),
   setTheme: (theme) => {
-    try { localStorage.setItem(LS_THEME, theme); } catch { /* ignore */ }
+    lsSet(LS_THEME, theme);
     applyTheme(theme);
     set({ theme });
   },
@@ -61,7 +63,7 @@ applyTheme(readTheme());
 darkQuery?.addEventListener?.('change', () => { if (useConfigUI.getState().theme === 'system') applyTheme('system'); });
 
 // store.ts forwards events it doesn't handle itself as a DOM event.
-window.addEventListener('grokbot:event', (e) => {
+window.addEventListener('bothq:event', (e) => {
   const ev = (e as CustomEvent<ServerEvent>).detail;
   const { bump } = useConfigUI.getState();
   if (ev.type === 'tasks') { bump('tasks'); bump(`tasks:${ev.botId}`); }

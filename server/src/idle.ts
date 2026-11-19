@@ -3,13 +3,15 @@
  * (kept as a pure function; see startIdleWatcher for why it no longer runs).
  */
 
+import { compatEnv } from './env.js';
+
 const num = (v: string | undefined, d: number) => (v !== undefined && v !== '' && Number.isFinite(Number(v)) ? Number(v) : d);
 
 export const idleConfig = {
-  idleMin: num(process.env.GROKBOT_IDLE_SUSPEND_MIN, 20),
-  sweepSec: num(process.env.GROKBOT_IDLE_SWEEP_SEC, 60),
+  idleMin: num(compatEnv('IDLE_SUSPEND_MIN'), 20),
+  sweepSec: num(compatEnv('IDLE_SWEEP_SEC'), 60),
   /** Log decisions but never call suspend (for test servers sharing a real VM). */
-  dryRun: process.env.GROKBOT_IDLE_DRY_RUN === '1',
+  dryRun: compatEnv('IDLE_DRY_RUN') === '1',
 };
 
 // ---------- viewer tracking (called from vnc.ts) ----------

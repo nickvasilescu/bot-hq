@@ -7,7 +7,7 @@ import { Icon } from '../Icon';
 import { Glyph } from './glyphs';
 import { formatBytes } from './ui';
 
-/** Files the bot saved under /root/grokbot/files/<botId> on its computer. */
+/** Files the bot saved in its Library folder on its computer (server/src/paths.ts). */
 export function LibraryTab({ bot }: { bot: Bot }) {
   const awake = useStore((s) => s.computer?.status === 'running');
   const [path, setPath] = useState('');

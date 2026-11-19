@@ -4,7 +4,7 @@ import { Hono } from 'hono';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { Server } from 'node:http';
-import { env } from './env.js';
+import { compatEnv, env } from './env.js';
 import { api } from './routes.js';
 import { attachVncRelay } from './vnc.js';
 import { initRoutines } from './routines.js';
@@ -21,6 +21,7 @@ import { startIdleWatcher } from './idle.js';
 import { mcpApi } from './mcp.js';
 import { initEngines } from './engine.js';
 import { sameOriginWrites } from './lib/auth.js';
+import { resolveBoxData } from './paths.js';
 
 if (!desSelfTest()) throw new Error('DES self-test failed');
 initSubagents();
@@ -46,13 +47,14 @@ if (fs.existsSync(webDist)) {
   app.get('*', (c) => c.html(fs.readFileSync(path.join(webDist, 'index.html'), 'utf8')));
 }
 
-const server = serve({ fetch: app.fetch, port: env.port, hostname: env.host }, (info) => console.log(`[grokbot] server on http://localhost:${info.port}`));
+const server = serve({ fetch: app.fetch, port: env.port, hostname: env.host }, (info) => console.log(`[bothq] server on http://localhost:${info.port}`));
 attachVncRelay(server as unknown as Server);
-// GROKBOT_NO_SCHEDULER=1 for extra dev/test servers sharing a database copy, so routines and triggers don't fire twice.
-if (process.env.GROKBOT_NO_SCHEDULER !== '1') {
+// BOTHQ_NO_SCHEDULER=1 for extra dev/test servers sharing a database copy, so routines and triggers don't fire twice.
+if (compatEnv('NO_SCHEDULER') !== '1') {
   initRoutines(enqueue);
   void initTriggers(enqueue);
 initProactive(enqueue);
-} else console.log('[grokbot] scheduler disabled (GROKBOT_NO_SCHEDULER=1)');
+} else console.log('[bothq] scheduler disabled (BOTHQ_NO_SCHEDULER=1)');
 startIdleWatcher();
+resolveBoxData().catch((e) => console.warn('[bothq] could not check the computer for its data folder:', e?.message ?? e));
 initEngines();

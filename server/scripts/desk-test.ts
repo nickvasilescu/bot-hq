@@ -24,6 +24,7 @@ import path from 'node:path';
 import { env } from '../src/env.js';
 import { orgo } from '../src/orgo.js';
 import { box } from '../src/box.js';
+import { profilesRoot, resolveBoxData } from '../src/paths.js';
 import { cdpPortFor, dressScreen, ensureDeskBase, openTerminal, resetScreen, undressScreen, type DeskBot } from '../src/desk.js';
 
 const SHOTS = process.env.DESK_SHOTS || path.join(os.tmpdir(), 'desk-test');
@@ -156,7 +157,7 @@ async function browsers(): Promise<Browser[]> {
     ours: l.includes('--hq-screen='),
   }));
 }
-const browserOf = (list: Browser[], botId: string) => list.find((b) => b.profile === `/root/grokbot/profiles/${botId}`);
+const browserOf = (list: Browser[], botId: string) => list.find((b) => b.profile === `${profilesRoot()}/${botId}`);
 const foreignPids = (list: Browser[]) => list.filter((b) => !b.ours).map((b) => b.pid).sort().join(',');
 
 /** What the home page in the Chrome on `port` says. */
@@ -314,6 +315,7 @@ async function testDefault(): Promise<void> {
 }
 
 async function main(): Promise<void> {
+  await resolveBoxData();
   if (box.local) throw new Error('this test drives a remote test computer through Orgo; run it without HQ_LOCAL');
   if (!env.orgoComputerId) throw new Error('set ORGO_COMPUTER_ID to the test computer');
   fs.mkdirSync(SHOTS, { recursive: true });

@@ -119,12 +119,19 @@ On the computer:
 python3 /opt/hq/hq-screen.py undress 99                      # main screen back to how it was (99 = its X display)
 python3 /opt/hq/app/scripts/add-hq-to-hermes.py --remove     # take the tools out of Hermes
 supervisorctl stop hq-app && supervisorctl remove hq-app
-rm -rf /etc/supervisor/conf.d/hq-app.conf /opt/hq /var/log/hq /root/grokbot /etc/opt/chrome/policies/managed/hq.json
+rm -rf /etc/supervisor/conf.d/hq-app.conf /opt/hq /var/log/hq /root/bothq /root/grokbot /etc/opt/chrome/policies/managed/hq.json
 ```
 
 Then delete the public URL in Orgo. Screens of the other bots are released when you delete those bots in the app.
 
 </details>
+
+## Upgrading
+
+Run the install script again with a newer `hq-app.tgz`; settings and data are kept. Two things to know when coming from an older version:
+
+- **Sign-in is stricter.** The server refuses to start with the example `SESSION_SECRET`. On a public URL only addresses in `ALLOWED_EMAILS` can sign in (an empty list lets no new account in), and `DEV_LOGIN` only works on `localhost`. `scripts/sign-in-link.sh` still signs anyone in from the computer itself.
+- **The project used to be called "Grokbot".** Old names keep working: `GROKBOT_*` environment variables are read when the `BOTHQ_*` ones are unset, an existing `data/grokbot.db` stays the default database, a computer that has `/root/grokbot` keeps using it for browser profiles and Library files, and old sign-in cookies and browser settings are still read.
 
 ## Run it locally
 
@@ -180,7 +187,6 @@ docs/               architecture; the Orgo and xAI/Composio guides predate the H
 - Experimental. Bots share one computer, run as root and can reach each other's files there. Read [SECURITY.md](SECURITY.md) before deploying.
 - Approval cards cover Composio write actions. What a bot does through its browser or shell is not gated, and Hermes' own "risky command" prompts are not shown in the app yet.
 - Four bots at most, because of Orgo's four-screen limit.
-- The app still calls itself "Grokbot" in places (page title, package names, the database file).
 - The screen look is an original implementation inspired by OrgoAI/bops; no code or assets from that repository are used.
 
 ## License and credits

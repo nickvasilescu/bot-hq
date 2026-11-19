@@ -39,6 +39,18 @@ export function isLoopbackUrl(u: string): boolean {
   }
 }
 
+/** BOTHQ_<name>, or GROKBOT_<name> as set up before the project was renamed. */
+export function compatEnv(name: string): string | undefined {
+  return process.env[`BOTHQ_${name}`] ?? process.env[`GROKBOT_${name}`];
+}
+
+/** Default database file. One made before the rename (data/grokbot.db) keeps being used. */
+function defaultDbPath(): string {
+  const current = new URL('../../data/bothq.db', import.meta.url).pathname;
+  const legacy = new URL('../../data/grokbot.db', import.meta.url).pathname;
+  return !fs.existsSync(current) && fs.existsSync(legacy) ? legacy : current;
+}
+
 const hermesHome = process.env.HERMES_HOME_PRIMARY ?? path.join(os.homedir(), '.hermes');
 const appUrl = process.env.APP_URL ?? 'http://localhost:5173';
 
@@ -58,7 +70,7 @@ export const env = {
   sessionSecret: sessionSecret(),
   /** Email-only sign-in for testing. Honoured only when APP_URL is a local address (see routes.ts). */
   devLogin: process.env.DEV_LOGIN === '1' && isLoopbackUrl(appUrl),
-  dbPath: process.env.DB_PATH ?? new URL('../../data/grokbot.db', import.meta.url).pathname,
+  dbPath: process.env.DB_PATH ?? defaultDbPath(),
 
   // ---- Hermes engine ----
   /** The `hermes` CLI used to start a gateway for each extra bot. */

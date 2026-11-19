@@ -6,6 +6,7 @@ import { botVars } from '../lib/colors';
 import { computerStatusText } from '../lib/computer';
 import { displayName, useSelectedBot, useStore } from '../store';
 import { Icon } from './Icon';
+import { lsGet, lsSet } from '../lib/storage';
 import { VoiceSettings } from './VoiceSettings';
 import { ComputerScreen, type ScreenMode } from './ComputerViewer';
 import { EngineSettings } from './EngineSettings';
@@ -52,7 +53,7 @@ export function DetailsPanel() {
   const viewerOpen = useStore((s) => s.viewerOpen);
   const set = useStore((s) => s.set);
   const [tab, setTab] = useState<'activity' | 'tasks' | 'library'>('activity');
-  const [hideSuggested, setHideSuggested] = useState(() => { try { return localStorage.getItem('grokbot.hideSuggested') === '1'; } catch { return false; } });
+  const [hideSuggested, setHideSuggested] = useState(() => lsGet('hideSuggested') === '1');
   if (!bot) return null;
 
   const openComputer = (mode: ScreenMode) => set({ viewerOpen: true, viewerMode: mode, viewerHint: null });
@@ -123,7 +124,7 @@ export function DetailsPanel() {
               <section>
                 <div className="section-label section-label--row">
                   <span>Suggested</span>
-                  <button type="button" className="link-btn link-btn--small" onClick={() => { setHideSuggested(true); try { localStorage.setItem('grokbot.hideSuggested', '1'); } catch { /* ignore */ } }}>Hide</button>
+                  <button type="button" className="link-btn link-btn--small" onClick={() => { setHideSuggested(true); lsSet('hideSuggested', '1'); }}>Hide</button>
                 </div>
                 <div className="panel-card">
                   <button type="button" className="panel-row panel-row--link" onClick={addSlack}>

@@ -4,6 +4,7 @@ import { hub } from './lib/hub.js';
 import { orgo, OrgoError, type OrgoScreen } from './orgo.js';
 import { cdpPortFor, dressScreen, resetScreen, undressScreen, type DeskBot } from './desk.js';
 import { box } from './box.js';
+import { libraryRoot, profilesRoot } from './paths.js';
 import type { ComputerState } from './types.js';
 
 /**
@@ -248,7 +249,7 @@ export async function releaseScreen(botId: string): Promise<void> {
 /** A deleted bot leaves nothing behind on the computer: its browser profile and its Library folder go. */
 export async function forgetBotFiles(botId: string): Promise<void> {
   if (!/^bot_[\w-]+$/.test(botId)) return;
-  await box.bash(`rm -rf -- /root/grokbot/profiles/${botId} /root/grokbot/files/${botId}`, 60);
+  await box.bash(`rm -rf -- ${box.quote(`${profilesRoot()}/${botId}`)} ${box.quote(`${libraryRoot()}/${botId}`)}`, 60);
 }
 
 /** The shared computer is never suspended from the app (other things live on it). */

@@ -7,6 +7,7 @@ import { requireUser, type AuthVars } from './lib/auth.js';
 import fs from 'node:fs';
 import { Readable } from 'node:stream';
 import { env } from './env.js';
+import { libraryRoot } from './paths.js';
 import { emitBot, getBotRow, listRoutines, listTasks } from './store.js';
 import { computerState, readyScreen, resetBotScreen } from './computer.js';
 import { box } from './box.js';
@@ -196,9 +197,7 @@ configApi.post('/bots/:id/handback', (c) => {
   return c.json({ ok: true });
 });
 
-// ---------- library: files under /root/grokbot/files/<botId> on the bot's computer ----------
-
-const LIB_ROOT = '/root/grokbot/files';
+// ---------- library: files under <libraryRoot>/<botId> on the bot's computer (see paths.ts) ----------
 
 function safeRel(p: string | undefined): string | null {
   const rel = (p ?? '').replace(/^\/+|\/+$/g, '');
@@ -231,8 +230,8 @@ configApi.get('/bots/:id/files', async (c) => {
   if (rel === null) return c.json({ error: 'bad path' }, 400);
   try {
     if (!box.local && computerState(user.id).status !== 'running') return c.json({ status: 'asleep', path: rel, files: [] });
-    const dir = `${LIB_ROOT}/${b.id}${rel ? `/${rel}` : ''}`;
-    const r = await box.bash(`mkdir -p ${shq(`${LIB_ROOT}/${b.id}`)} && ls -la --time-style=+%s ${shq(dir)} 2>&1`, 30);
+    const dir = `${libraryRoot()}/${b.id}${rel ? `/${rel}` : ''}`;
+    const r = await box.bash(`mkdir -p ${shq(`${libraryRoot()}/${b.id}`)} && ls -la --time-style=+%s ${shq(dir)} 2>&1`, 30);
     if (r.exit_code !== 0) return c.json({ status: 'error', path: rel, files: [], error: (r.output ?? '').slice(0, 300) });
     return c.json({ status: 'ok', path: rel, files: parseLs(r.output ?? '') });
   } catch (e: any) {
@@ -251,7 +250,7 @@ configApi.post('/bots/:id/files/download', async (c) => {
   if (box.local) return c.json({ url: `/api/bots/${b.id}/files/raw?path=${encodeURIComponent(rel)}` });
   try {
     if (!env.orgoComputerId) return c.json({ error: 'computer unavailable' }, 409);
-    const r: any = await orgo.exportFile(env.orgoComputerId, `${LIB_ROOT}/${b.id}/${rel}`);
+    const r: any = await orgo.exportFile(env.orgoComputerId, `${libraryRoot()}/${b.id}/${rel}`);
     const url = r?.url ?? r?.file?.url ?? r?.download_url;
     if (!url) return c.json({ error: 'export returned no link' }, 502);
     return c.json({ url });
@@ -265,7 +264,7 @@ configApi.get('/bots/:id/files/raw', (c) => {
   if (!b || !box.local) return c.json({ error: 'not found' }, 404);
   const rel = safeRel(c.req.query('path'));
   if (!rel) return c.json({ error: 'bad path' }, 400);
-  const root = `${LIB_ROOT}/${b.id}`;
+  const root = `${libraryRoot()}/${b.id}`;
   let file: string;
   try {
     // Follow links before checking, so a link inside the library cannot point outside it.
