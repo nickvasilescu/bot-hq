@@ -5,12 +5,13 @@ import { db, now } from './db.js';
 import { env } from './env.js';
 import { newId } from './lib/ids.js';
 import { hub } from './lib/hub.js';
-import { createSession, destroySession, isOwnerKey, requireUser, userFromCookieHeader, type AuthVars } from './lib/auth.js';
+import { createSession, destroySession, isOwnerKey, requireUser, screenTicket, userFromCookieHeader, type AuthVars } from './lib/auth.js';
 import { allLive, appendRow, clearConversation, emitBot, getBot, getBotRow, getRow, listBots, listRoutines, listRows, listTasks, toRoutine, updateRow } from './store.js';
 import { enqueue, interrupt, resolveApproval } from './agent/loop.js';
 import { computerState, ensureComputer, forgetBotFiles, readyScreen, refreshComputer, releaseScreen, suspendComputer } from './computer.js';
 import { assignEngine, provisionEngine, removeEngine, syncPersona } from './engine.js';
 import { deleteMemory, listMemories, memoryBot } from './engine-memory.js';
+import { cancelClaudeLogin } from './engine-login.js';
 import { orgo } from './orgo.js';
 import { catalog, connectedToolkits, deleteConnection, disconnect, googleProfile, startConnect, startGoogleLogin, toolkitInfo } from './composio.js';
 import { runRoutine, scheduleRoutine, unscheduleRoutine } from './routines.js';
@@ -218,6 +219,7 @@ api.delete('/bots/:id', async (c) => {
   const b = ownBot(c.get('user').id, c.req.param('id'));
   if (!b) return c.json({ error: 'not found' }, 404);
   interrupt(b.id);
+  cancelClaudeLogin(b.id); // a sign-in left waiting must not outlive the bot's home
   for (const r of listRoutines(b.id)) {
     unscheduleRoutine(r.id);
     await deleteEventTrigger(r.id).catch(() => {});
@@ -388,6 +390,15 @@ api.post('/computer/ensure', (c) => {
 api.post('/computer/suspend', async (c) => {
   await suspendComputer(c.get('user').id);
   return c.json({ computer: computerState(c.get('user').id) });
+});
+
+/** Where the viewer should open this bot's screen: null = this same host, else a direct address with a ticket. */
+api.get('/bots/:id/screen-url', (c) => {
+  const user = c.get('user');
+  const b = ownBot(user.id, c.req.param('id'));
+  if (!b) return c.json({ error: 'not found' }, 404);
+  if (!env.publicWsUrl) return c.json({ url: null });
+  return c.json({ url: `${env.publicWsUrl}/api/bots/${b.id}/screen?ticket=${screenTicket(user.id, b.id)}` });
 });
 
 api.get('/bots/:id/screenshot', async (c) => {
